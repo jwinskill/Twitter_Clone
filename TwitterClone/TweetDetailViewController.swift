@@ -24,6 +24,7 @@ class TweetDetailViewController: UIViewController {
         
         let vc = self.storyboard?.instantiateViewControllerWithIdentifier("HOME_TIMELINE_VC") as HomeTimeLineViewController
         vc.userTweet = self.tweet!
+        vc.home = false
         self.navigationController?.pushViewController(vc, animated: true)
     }
     
@@ -31,19 +32,6 @@ class TweetDetailViewController: UIViewController {
         super.viewDidLoad()
         updateViewFields()
     }
-    
-//    override func viewWillAppear(animated: Bool) {
-//        let appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
-//        self.networkController = appDelegate.networkController
-//        self.networkController.fetchTweetInfo(self.tweet!, completionHandler: { (errorDescription, tweet) -> Void in
-//            if errorDescription != nil {
-//                println("something bad happened")
-//            } else {
-//                self.tweet = tweet
-//                self.updateViewFields()
-//            }
-//        })
-//    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -53,6 +41,8 @@ class TweetDetailViewController: UIViewController {
     func updateViewFields() {
         self.userNameLabel.text = tweet?.userName
         self.userImageView.image = tweet?.avatarImage
+        self.userImageView.layer.cornerRadius = self.userImageView.frame.height * 0.1
+        self.userImageView.layer.masksToBounds = true
         self.tweetMessageLabel.text = tweet?.text
         self.retweetCountLabel.text = tweet?.retweets?.description
         self.favoritesCountLabel.text = tweet?.favorites?.description

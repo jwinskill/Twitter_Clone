@@ -28,12 +28,12 @@
                     </label>
                 </subviews>
                 <constraints>
+                    <constraint firstAttribute="bottomMargin" relation="greaterThanOrEqual" secondItem="Ofy-oL-bnv" secondAttribute="bottom" constant="8" id="07V-80-DKu"/>
                     <constraint firstAttribute="trailingMargin" secondItem="Ofy-oL-bnv" secondAttribute="trailing" constant="6" id="K2A-HH-ml5"/>
                     <constraint firstItem="Ofy-oL-bnv" firstAttribute="top" secondItem="FvL-J7-WyZ" secondAttribute="topMargin" id="QNL-Cf-LzF"/>
                     <constraint firstItem="Aaw-LJ-06V" firstAttribute="top" secondItem="FvL-J7-WyZ" secondAttribute="top" constant="8" id="b8p-VL-CBD"/>
                     <constraint firstItem="Ofy-oL-bnv" firstAttribute="leading" secondItem="Aaw-LJ-06V" secondAttribute="trailing" constant="8" id="fha-EX-za1"/>
-                    <constraint firstAttribute="bottomMargin" relation="greaterThanOrEqual" secondItem="Ofy-oL-bnv" secondAttribute="bottom" constant="8" id="jZ5-Ob-ZU8"/>
-                    <constraint firstAttribute="bottomMargin" relation="greaterThanOrEqual" secondItem="Aaw-LJ-06V" secondAttribute="bottom" constant="8" id="pX4-8L-6Xq"/>
+                    <constraint firstAttribute="bottomMargin" relation="greaterThanOrEqual" secondItem="Aaw-LJ-06V" secondAttribute="bottom" constant="8" id="yKJ-mr-tbs"/>
                     <constraint firstItem="Aaw-LJ-06V" firstAttribute="leading" secondItem="FvL-J7-WyZ" secondAttribute="leading" constant="8" id="yhP-ei-nf1"/>
                 </constraints>
             </tableViewCellContentView>

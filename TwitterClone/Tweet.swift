@@ -21,7 +21,12 @@ class Tweet {
     init (tweetInfo: NSDictionary) {
         self.text = tweetInfo["text"] as? String
         let userDictionary = tweetInfo["user"] as? NSDictionary
-        self.avatarImageURLString = userDictionary!["profile_image_url"] as? String
+        let smallProfileImageURLString = userDictionary!["profile_image_url"] as? String
+        
+        let normalRange = smallProfileImageURLString!.rangeOfString("_normal", options: nil, range: nil, locale: nil)
+        self.avatarImageURLString = smallProfileImageURLString!.stringByReplacingCharactersInRange(normalRange!, withString: "_bigger")
+        
+        
         self.userName = userDictionary!["name"] as? String
         self.favorites = tweetInfo["favorite_count"] as? Int
         self.retweets = tweetInfo["retweet_count"] as? Int

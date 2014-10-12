@@ -31,7 +31,6 @@ class NetworkController {
                 var url: NSURL?
                 
                 if userTweet != nil {
-                    println(userTweet!.userID!)
                     url = NSURL(string: "https://api.twitter.com/1.1/statuses/user_timeline.json?user_id=\(userTweet!.userID!)")
                 } else {
                     url = NSURL(string: "https://api.twitter.com/1.1/statuses/home_timeline.json")
@@ -64,8 +63,42 @@ class NetworkController {
         }
     }
     
-    func fetchTweetInfo(passedTweet: Tweet, completionHandler: (errorDescription: String?, tweet: Tweet?) -> Void) {
-        
+//    func fetchTweetInfo(passedTweet: Tweet, completionHandler: (errorDescription: String?, tweet: Tweet?) -> Void) {
+//        
+//        let accountStore = ACAccountStore()
+//        let accountType = accountStore.accountTypeWithAccountTypeIdentifier(ACAccountTypeIdentifierTwitter)
+//        accountStore.requestAccessToAccountsWithType(accountType, options: nil) { (granted: Bool, error: NSError!) -> Void in
+//            if granted {
+//                
+//                let accounts = accountStore.accountsWithAccountType(accountType)
+//                self.twitterAccount = accounts.first as? ACAccount
+//                let url = NSURL(string: "https://api.twitter.com/1.1/statuses/show.json?id=\(passedTweet.id!)")
+//                let twitterRequest = SLRequest(forServiceType: SLServiceTypeTwitter, requestMethod: SLRequestMethod.GET, URL: url, parameters: nil)
+//                twitterRequest.account = self.twitterAccount
+//                twitterRequest.performRequestWithHandler({ (data, httpResponse, error) -> Void in
+//                    if error == nil {
+//                        switch httpResponse.statusCode {
+//                        case 200...299:
+//                            let newTweet = Tweet.parseJSONDataIntoIndividualTweet(data)
+//                            NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+//                                completionHandler(errorDescription: nil, tweet: newTweet)
+//                            })
+//                        case 400...499:
+//                            println("This is the client's fault")
+//                            completionHandler(errorDescription: "This was your fault", tweet: nil)
+//                        case 500...599:
+//                            println("This is the server's fault")
+//                            completionHandler(errorDescription: "This is the server's fault", tweet: nil)
+//                        default:
+//                            println("something bad happened")
+//                        }
+//                    }
+//                })
+//            }
+//        }
+//    }
+    
+    func fetchRefreshedTweets(stringForHomeOrUser: String, newestTweet: Tweet?, completionHandler: (errorDescription: String?, tweets: [Tweet]?) -> Void) {
         let accountStore = ACAccountStore()
         let accountType = accountStore.accountTypeWithAccountTypeIdentifier(ACAccountTypeIdentifierTwitter)
         accountStore.requestAccessToAccountsWithType(accountType, options: nil) { (granted: Bool, error: NSError!) -> Void in
@@ -73,23 +106,61 @@ class NetworkController {
                 
                 let accounts = accountStore.accountsWithAccountType(accountType)
                 self.twitterAccount = accounts.first as? ACAccount
-                let url = NSURL(string: "https://api.twitter.com/1.1/statuses/show.json?id=\(passedTweet.id!)")
+                let url = NSURL(string: "https://api.twitter.com/1.1/statuses/\(stringForHomeOrUser)_timeline.json?user_id=\(newestTweet!.userID!)&since_id=\(newestTweet!.id!)")
+                println(url)
                 let twitterRequest = SLRequest(forServiceType: SLServiceTypeTwitter, requestMethod: SLRequestMethod.GET, URL: url, parameters: nil)
                 twitterRequest.account = self.twitterAccount
                 twitterRequest.performRequestWithHandler({ (data, httpResponse, error) -> Void in
                     if error == nil {
                         switch httpResponse.statusCode {
                         case 200...299:
-                            let newTweet = Tweet.parseJSONDataIntoIndividualTweet(data)
+                            let newTweets = Tweet.parseJSONDataIntoTweets(data)
                             NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
-                                completionHandler(errorDescription: nil, tweet: newTweet)
+                                completionHandler(errorDescription: nil, tweets: newTweets)
                             })
                         case 400...499:
-                            println("This is the client's fault")
-                            completionHandler(errorDescription: "This was your fault", tweet: nil)
+                            println("This is the client's fault, status code: \(httpResponse.statusCode)")
+                            completionHandler(errorDescription: "This was your fault", tweets: nil)
                         case 500...599:
                             println("This is the server's fault")
-                            completionHandler(errorDescription: "This is the server's fault", tweet: nil)
+                            completionHandler(errorDescription: "This is the server's fault", tweets: nil)
+                        default:
+                            println("something bad happened")
+                        }
+                    }
+                })
+            }
+        }
+
+    }
+    
+    func fetchOlderTweets(stringforHomeOrUser: String, oldestTweet: Tweet?, completionHandler: (errorDescription: String?, tweets: [Tweet]?) -> Void) {
+            
+        let accountStore = ACAccountStore()
+        let accountType = accountStore.accountTypeWithAccountTypeIdentifier(ACAccountTypeIdentifierTwitter)
+        accountStore.requestAccessToAccountsWithType(accountType, options: nil) { (granted: Bool, error: NSError!) -> Void in
+            if granted {
+                
+                let accounts = accountStore.accountsWithAccountType(accountType)
+                self.twitterAccount = accounts.first as? ACAccount
+                let url = NSURL(string: "https://api.twitter.com/1.1/statuses/\(stringforHomeOrUser)_timeline.json?user_id=\(oldestTweet!.userID!)&max_id=\(oldestTweet!.id!)")
+                println(url)
+                let twitterRequest = SLRequest(forServiceType: SLServiceTypeTwitter, requestMethod: SLRequestMethod.GET, URL: url, parameters: nil)
+                twitterRequest.account = self.twitterAccount
+                twitterRequest.performRequestWithHandler({ (data, httpResponse, error) -> Void in
+                    if error == nil {
+                        switch httpResponse.statusCode {
+                        case 200...299:
+                            let newTweets = Tweet.parseJSONDataIntoTweets(data)
+                            NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+                                completionHandler(errorDescription: nil, tweets: newTweets)
+                            })
+                        case 400...499:
+                            println("This is the client's fault, status code: \(httpResponse.statusCode)")
+                            completionHandler(errorDescription: "This was your fault", tweets: nil)
+                        case 500...599:
+                            println("This is the server's fault")
+                            completionHandler(errorDescription: "This is the server's fault", tweets: nil)
                         default:
                             println("something bad happened")
                         }

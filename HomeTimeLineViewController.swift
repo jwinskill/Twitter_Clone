@@ -19,8 +19,10 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
     @IBOutlet weak var avatarHeaderImageView: UIImageView!
     var networkController: NetworkController!
     var userTweet: Tweet?
+    var home = true
     
     
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -29,9 +31,8 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         }
         self.userNameHeaderLabel.text = self.userTweet?.userName
         self.avatarHeaderImageView.image = self.userTweet?.avatarImage
-        
-           self.tableView.rowHeight = 100
-           self.tableView.rowHeight = UITableViewAutomaticDimension
+        self.avatarHeaderImageView.layer.cornerRadius = self.avatarHeaderImageView.frame.height * 0.1
+        self.avatarHeaderImageView.layer.masksToBounds = true
         
         self.tableView.registerNib(UINib(nibName: "TweetCell", bundle: NSBundle.mainBundle()), forCellReuseIdentifier: "TWEET_CELL")
         
@@ -57,18 +58,28 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
                     println("something went wrong")
                 } else {
                     self.tweets = tweets
-                    //   self.tableView.rowHeight = 100
-                    //   self.tableView.rowHeight = UITableViewAutomaticDimension
                     self.tableView.reloadData()
                 }
             })
         }
+        
+        // Add a UIRefreshControl to tableView for new tweets
+        let refreshControl = UIRefreshControl()
+        refreshControl.backgroundColor = UIColor.blueColor()
+        refreshControl.tintColor = UIColor.whiteColor()
+        refreshControl.addTarget(self, action: "refreshTweets:", forControlEvents: UIControlEvents.ValueChanged)
+        self.tableView.addSubview(refreshControl)
+        
+        
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewWillAppear(animated: Bool) {
         self.tableView.reloadData()
     }
     
+    override func viewWillDisappear(animated: Bool) {
+        self.tableView.reloadData()
+    }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.tweets != nil {
@@ -82,7 +93,6 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         let vc = self.storyboard?.instantiateViewControllerWithIdentifier("TWEET_DETAIL_VC") as TweetDetailViewController
         let selectedIndexPath = indexPath
         let selectedTweet = self.tweets?[selectedIndexPath.row]
-        println(selectedTweet)
         vc.tweet = selectedTweet
         self.navigationController?.pushViewController(vc, animated: true)
         
@@ -96,8 +106,7 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         let tweet = self.tweets?[indexPath.row]
         if (tweet != nil) {
             cell.tweetTextLabel.text = tweet?.text
-       //     cell.tweetTextLabel.sizeToFit()
-       //     cell.tweetTextLabel.setTranslatesAutoresizingMaskIntoConstraints(false)
+            cell.tweetTextLabel.preferredMaxLayoutWidth = cell.frame.size.width - 124
             if tweet?.avatarImage? != nil {
                 cell.avatarImageView?.image = tweet?.avatarImage!
             } else {
@@ -105,22 +114,66 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
                 self.networkController.downloadUserImageForTweet(tweet!, completionHandler: { (image) -> Void in
                     let cellForImage = self.tableView.cellForRowAtIndexPath(indexPath) as TwitterCell?
                     cellForImage?.avatarImageView?.image = image
+                    })
+                }
+            }
+        return cell
+    }
+    
+    func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
+        
+        if self.home == true {
+            if indexPath.row == self.tweets!.count - 1 {
+                // add more cells to the tableView
+                self.networkController.fetchOlderTweets("home", oldestTweet: tweets!.last, completionHandler: { (errorDescription, tweets) -> Void in
+                    if errorDescription != nil {
+                        // let the user know something went wrong
+                        println("something bad happened")
+                    } else {
+                        self.tweets = self.tweets! + tweets!
+                        self.tableView.reloadData()
+                    }
+                })
+            }
+        } else {
+            if indexPath.row == self.tweets!.count - 1 {
+                // add more cells to the tableView
+                self.networkController.fetchOlderTweets("user", oldestTweet: tweets!.last, completionHandler: { (errorDescription, tweets) -> Void in
+                    if errorDescription != nil {
+                        // let the user know something went wrong
+                        println("tweets could not be added")
+                    } else {
+                        self.tweets = self.tweets! + tweets!
+                        self.tableView.reloadData()
+                    }
                 })
             }
         }
-        return cell
     }
-}
 
-
-
-        // Deprecated prepareForSegue method
+    func refreshTweets(sender: AnyObject) {
         
-//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-//        if segue.identifier == "SEGUE_TO_DETAIL" {
-//            let vc = segue.destinationViewController as TweetDetailViewController
-//            let selectedIndexPath = tableView.indexPathForSelectedRow()
-//            let selectedTweet = self.tweets?[selectedIndexPath!.row]
-//            vc.tweet = selectedTweet
-//        }
-//    }
+        if self.home == true {
+            self.networkController.fetchRefreshedTweets("home", newestTweet: tweets?[0], completionHandler: { (errorDescription, tweets) -> Void in
+                if errorDescription != nil {
+                    println("tweets were not refreshed properly")
+                } else {
+                    self.tweets = tweets! + self.tweets!
+                    self.tableView.reloadData()
+                    sender.endRefreshing()
+                }
+            })
+        } else {
+            self.networkController.fetchRefreshedTweets("user", newestTweet: tweets?[0], completionHandler: { (errorDescription, tweets) -> Void in
+                if errorDescription != nil {
+                    println("tweets were not refreshed properly")
+                } else {
+                    self.tweets = tweets! + self.tweets!
+                    self.tableView.reloadData()
+                    sender.endRefreshing()
+                }
+            })
+        }
+    }
+    
+}
