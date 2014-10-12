@@ -26,6 +26,7 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Implement a header only if visiting another user's timeline
         if userTweet == nil {
             self.tableView.tableHeaderView = nil
         }
@@ -34,8 +35,10 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         self.avatarHeaderImageView.layer.cornerRadius = self.avatarHeaderImageView.frame.height * 0.1
         self.avatarHeaderImageView.layer.masksToBounds = true
         
+        // Add a custom Tweetcell from a nib
         self.tableView.registerNib(UINib(nibName: "TweetCell", bundle: NSBundle.mainBundle()), forCellReuseIdentifier: "TWEET_CELL")
         
+        // Implement the networkController as a singleton
         let appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
         self.networkController = appDelegate.networkController
         
@@ -81,6 +84,9 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         self.tableView.reloadData()
     }
     
+    
+    // MARK: UITableViewDataSource
+    
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.tweets != nil {
             return self.tweets!.count
@@ -89,16 +95,6 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         }
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        let vc = self.storyboard?.instantiateViewControllerWithIdentifier("TWEET_DETAIL_VC") as TweetDetailViewController
-        let selectedIndexPath = indexPath
-        let selectedTweet = self.tweets?[selectedIndexPath.row]
-        vc.tweet = selectedTweet
-        self.navigationController?.pushViewController(vc, animated: true)
-        
-    }
-
-        
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("TWEET_CELL", forIndexPath: indexPath) as TwitterCell
         
@@ -114,12 +110,28 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
                 self.networkController.downloadUserImageForTweet(tweet!, completionHandler: { (image) -> Void in
                     let cellForImage = self.tableView.cellForRowAtIndexPath(indexPath) as TwitterCell?
                     cellForImage?.avatarImageView?.image = image
-                    })
-                }
+                })
             }
+        }
         return cell
     }
     
+    
+    // MARK: UITableViewDelegate
+    
+    // Prepare to push to tweet detail view
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let vc = self.storyboard?.instantiateViewControllerWithIdentifier("TWEET_DETAIL_VC") as TweetDetailViewController
+        let selectedIndexPath = indexPath
+        let selectedTweet = self.tweets?[selectedIndexPath.row]
+        vc.tweet = selectedTweet
+        self.navigationController?.pushViewController(vc, animated: true)
+        
+    }
+
+        
+
+    // Method for infinite scroll
     func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
         
         if self.home == true {
@@ -151,6 +163,7 @@ class HomeTimeLineViewController: UIViewController, UITableViewDataSource, UITab
         }
     }
 
+    // Method for pull-down refresh for tweets
     func refreshTweets(sender: AnyObject) {
         
         if self.home == true {
